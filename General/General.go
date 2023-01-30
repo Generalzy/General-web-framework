@@ -1,41 +1,27 @@
 package General
 
 import (
-	"fmt"
 	"net/http"
-)
-
-const (
-	MethodGet     = http.MethodGet
-	MethodHead    = http.MethodHead
-	MethodPost    = http.MethodPost
-	MethodPut     = http.MethodPut
-	MethodPatch   = http.MethodPatch
-	MethodDelete  = http.MethodDelete
-	MethodConnect = http.MethodConnect
-	MethodOptions = http.MethodOptions
-	MethodTrace   = http.MethodTrace
 )
 
 const keyword = "_"
 
 // HandlerFunc 定义视图函数
-type HandlerFunc func(w http.ResponseWriter,request *http.Request)
+type HandlerFunc func(*Context)
 
 // Engine 定义General引擎
 type Engine struct {
-	router map[string]HandlerFunc
+	router *router
 }
 
 // New 初始化引擎
 func New()*Engine{
-	return &Engine{router: make(map[string]HandlerFunc)}
+	return &Engine{router: NewRouter()}
 }
 
 // Url 用于注册视图函数与url的映射,灵感来自django
 func (e *Engine)Url(method string,pattern string,handler HandlerFunc){
-	k:=method+keyword+pattern
-	e.router[k]=handler
+	e.router.Url(method,pattern,handler)
 }
 
 // Path 等效于Url
@@ -55,12 +41,7 @@ func (e *Engine)Post(pattern string,handler HandlerFunc){
 
 // ServeHTTP 实现Handler接口
 func (e *Engine)ServeHTTP(w http.ResponseWriter,request *http.Request){
-	k:=request.Method+keyword+request.URL.Path
-	if handler,ok:=e.router[k];ok{
-		handler(w,request)
-	}else{
-		_,_=fmt.Fprintf(w,"404 not found: %s \n",request.URL)
-	}
+	e.router.handle(newContext(w,request))
 }
 
 // Run 开启HTTP服务

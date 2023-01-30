@@ -9,10 +9,18 @@ import (
 
 func main() {
 	engine:=General.New()
-	engine.Get("/", func(w http.ResponseWriter, request *http.Request) {
-		for k, v := range request.Header {
-			_,_ = fmt.Fprintf(w, "Header[%q] = %q \n", k, v)
+	engine.Get("/", func(ctx *General.Context) {
+		data:=General.H{}
+		for k, v := range ctx.Request.Header{
+			key:=fmt.Sprintf("Header[%q] = ",k)
+			val:=fmt.Sprintf("%q \n",v)
+			data[key]=val
 		}
+		ctx.Json(http.StatusOK,General.H{
+			"code":0,
+			"data":data,
+			"err":"",
+		})
 	})
 	log.Fatalln(engine.Run(":8080"))
 }
