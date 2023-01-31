@@ -2,6 +2,7 @@ package General
 
 import (
 	"net/http"
+	"strings"
 )
 
 const keyword = "_"
@@ -17,16 +18,27 @@ type RouterGroup struct {
 	engine      *Engine
 }
 
-func (g *RouterGroup)Group(prefix string)*RouterGroup{
+func (g *RouterGroup)Group(prefix string,middleware...HandlerFunc)*RouterGroup{
 	engine:=g.engine
 	engine.groups = append(engine.groups,g)
-	return &RouterGroup{
+
+	rg:= &RouterGroup{
 		engine: engine,
 		// 支持分组的分组...
 		prefix: g.prefix+prefix,
 		// 谁调用Group,就将谁设置为parent
 		parent: g,
+		// 将middleware加入
+		middlewares: middleware,
 	}
+	// 把新的group也加进去
+	engine.groups = append(engine.groups,rg)
+	return rg
+}
+
+// Use 将中间件添加入路由
+func (g *RouterGroup)Use(middlewares... HandlerFunc){
+	g.middlewares=append(g.middlewares,middlewares...)
 }
 
 // Engine 定义General引擎
@@ -72,8 +84,20 @@ func (g *RouterGroup)Post(pattern string,handler HandlerFunc){
 
 // ServeHTTP 实现Handler接口
 func (e *Engine)ServeHTTP(w http.ResponseWriter,request *http.Request){
+	middlewares:=make([]HandlerFunc,0,buf)
+	// 遍历路由组
+	for _,group:=range e.groups{
+		// 如果当前路由是group定义的前缀
+		if strings.HasPrefix(request.URL.Path,group.prefix){
+			// 将应用到group的middlewares取出来
+			middlewares=append(middlewares,group.middlewares...)
+		}
+	}
+	ctx:=newContext(w,request)
+	// 将Group的middleware交给ctx
+	ctx.middlewares=middlewares
 	// handle 路由映射
-	e.router.handle(newContext(w,request))
+	e.router.handle(ctx)
 }
 
 // Run 开启HTTP服务

@@ -22,6 +22,10 @@ type Context struct {
 	Status int
 	// URL动态参数
 	Params map[string]string
+
+	// 中间件
+	middlewares []HandlerFunc
+	index int
 }
 
 func newContext(w http.ResponseWriter, request *http.Request)*Context{
@@ -30,6 +34,17 @@ func newContext(w http.ResponseWriter, request *http.Request)*Context{
 		Method: request.Method,
 		Request: request,
 		Writer: w,
+		// 目前没有执行中间件,所以index为-1
+		index: -1,
+	}
+}
+
+// Next 将中间件的控制权交给下一个中间件
+func (c *Context)Next(){
+	c.index++
+	for ;c.index<len(c.middlewares);c.index++{
+		// 执行下一个中间件
+		c.middlewares[c.index](c)
 	}
 }
 

@@ -7,6 +7,14 @@ import (
 	"net/http"
 )
 
+func LogMiddleWare()General.HandlerFunc{
+	return func(ctx *General.Context) {
+		fmt.Println("request",ctx.Method,ctx.Request.RemoteAddr,ctx.Path)
+		ctx.Next()
+		fmt.Println("response",ctx.Method,ctx.Request.RemoteAddr,ctx.Path)
+	}
+}
+
 func main() {
 	engine:=General.New()
 	engine.Get("/", func(ctx *General.Context) {
@@ -27,7 +35,9 @@ func main() {
 			"code":0,"data":ctx.Param("name"),"err":"",
 		})
 	})
-	group:=engine.Group("/api/v1")
+
+
+	group:=engine.Group("/api/v1",LogMiddleWare())
 	group.Get("/user", func(ctx *General.Context) {
 		ctx.Json(http.StatusOK,General.H{
 			"code":0,"data":ctx.Path,"err":"",

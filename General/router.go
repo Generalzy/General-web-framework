@@ -82,9 +82,19 @@ func (r *router)handle(ctx *Context){
 		ctx.Params=params
 		k:=ctx.Method+keyword+n.pattern
 		// node存在说明一定有该路由
-		r.handlers[k](ctx)
+		// 将视图函数也作为一个中间件(实际上二者都是Handler)
+		ctx.middlewares = append(ctx.middlewares,r.handlers[k])
+		// r.handlers[k](ctx)
 	} else{
-		ctx.String(http.StatusBadRequest,"404 not found: %v \n",ctx.Path)
+		// 同上,将视图函数也作为一个中间件加入
+		ctx.middlewares = append(ctx.middlewares, func(context *Context) {
+			ctx.String(http.StatusBadRequest,"404 not found: %v \n",ctx.Path)
+		})
 	}
+	// 调用Next去执行Handler
+	// 假设:middlewares = [ m1,m2,view]
+	// index = 0,1,2
+	// 执行顺序就是: m1(ctx),m2(ctx),view(ctx),m2(ctx),m1(ctx)
+	ctx.Next()
 }
 
