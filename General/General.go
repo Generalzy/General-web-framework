@@ -41,6 +41,7 @@ func (e *Engine)Post(pattern string,handler HandlerFunc){
 
 // ServeHTTP 实现Handler接口
 func (e *Engine)ServeHTTP(w http.ResponseWriter,request *http.Request){
+	// handle 路由映射
 	e.router.handle(newContext(w,request))
 }
 

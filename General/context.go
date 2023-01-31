@@ -14,9 +14,14 @@ type Context struct {
 	Request *http.Request
 	Writer http.ResponseWriter
 
+	// 请求URL
 	Path string
+	// 请求方式
 	Method string
+	// 状态码
 	Status int
+	// URL动态参数
+	Params map[string]string
 }
 
 func newContext(w http.ResponseWriter, request *http.Request)*Context{
@@ -26,6 +31,18 @@ func newContext(w http.ResponseWriter, request *http.Request)*Context{
 		Request: request,
 		Writer: w,
 	}
+}
+
+func (c *Context)Query(key string)string{
+	return c.Request.URL.Query().Get(key)
+}
+
+func (c *Context)Form(key string)string{
+	return c.Request.FormValue(key)
+}
+
+func (c *Context)Param(key string)string{
+	return c.Params[key]
 }
 
 // SetHeader 设置响应头信息

@@ -22,5 +22,10 @@ func main() {
 			"err":"",
 		})
 	})
+	engine.Get("/hello/:name", func(ctx *General.Context) {
+		ctx.Json(http.StatusOK,General.H{
+			"code":0,"data":ctx.Param("name"),"err":"",
+		})
+	})
 	log.Fatalln(engine.Run(":8080"))
 }
