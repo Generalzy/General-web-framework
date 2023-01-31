@@ -18,9 +18,8 @@ type RouterGroup struct {
 	engine      *Engine
 }
 
-func (g *RouterGroup)Group(prefix string,middleware...HandlerFunc)*RouterGroup{
+func (g *RouterGroup)Group(prefix string)*RouterGroup{
 	engine:=g.engine
-	engine.groups = append(engine.groups,g)
 
 	rg:= &RouterGroup{
 		engine: engine,
@@ -28,8 +27,6 @@ func (g *RouterGroup)Group(prefix string,middleware...HandlerFunc)*RouterGroup{
 		prefix: g.prefix+prefix,
 		// 谁调用Group,就将谁设置为parent
 		parent: g,
-		// 将middleware加入
-		middlewares: middleware,
 	}
 	// 把新的group也加进去
 	engine.groups = append(engine.groups,rg)
@@ -58,6 +55,12 @@ func New()*Engine{
 	engine.RouterGroup = &RouterGroup{engine: engine}
 	// 将引擎加入groups
 	engine.groups=[]*RouterGroup{engine.RouterGroup}
+	return engine
+}
+
+func Default()*Engine{
+	engine:=New()
+	engine.Use(Logger(),Recovery())
 	return engine
 }
 
