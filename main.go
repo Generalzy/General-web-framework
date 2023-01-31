@@ -27,5 +27,11 @@ func main() {
 			"code":0,"data":ctx.Param("name"),"err":"",
 		})
 	})
+	group:=engine.Group("/api/v1")
+	group.Get("/user", func(ctx *General.Context) {
+		ctx.Json(http.StatusOK,General.H{
+			"code":0,"data":ctx.Path,"err":"",
+		})
+	})
 	log.Fatalln(engine.Run(":8080"))
 }

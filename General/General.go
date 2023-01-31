@@ -9,34 +9,65 @@ const keyword = "_"
 // HandlerFunc 定义视图函数
 type HandlerFunc func(*Context)
 
+// RouterGroup 路由分组
+type RouterGroup struct {
+	prefix      string
+	middlewares []HandlerFunc
+	parent      *RouterGroup
+	engine      *Engine
+}
+
+func (g *RouterGroup)Group(prefix string)*RouterGroup{
+	engine:=g.engine
+	engine.groups = append(engine.groups,g)
+	return &RouterGroup{
+		engine: engine,
+		// 支持分组的分组...
+		prefix: g.prefix+prefix,
+		// 谁调用Group,就将谁设置为parent
+		parent: g,
+	}
+}
+
 // Engine 定义General引擎
+// 将引擎看作最大的Group
 type Engine struct {
+	*RouterGroup
 	router *router
+	groups []*RouterGroup
 }
 
 // New 初始化引擎
 func New()*Engine{
-	return &Engine{router: NewRouter()}
+	engine:=&Engine{router: NewRouter()}
+	// 引擎的父节点,代表引擎是root
+	// 引擎的engine自然为自己
+	// 引擎的前缀自然为""
+	engine.RouterGroup = &RouterGroup{engine: engine}
+	// 将引擎加入groups
+	engine.groups=[]*RouterGroup{engine.RouterGroup}
+	return engine
 }
 
 // Url 用于注册视图函数与url的映射,灵感来自django
-func (e *Engine)Url(method string,pattern string,handler HandlerFunc){
-	e.router.Url(method,pattern,handler)
+func (g *RouterGroup)Url(method string,pattern string,handler HandlerFunc){
+	pattern = g.prefix+pattern
+	g.engine.router.Url(method,pattern,handler)
 }
 
 // Path 等效于Url
-func (e *Engine)Path(method string,pattern string,handler HandlerFunc){
-	e.Url(method,pattern,handler)
+func (g *RouterGroup)Path(method string,pattern string,handler HandlerFunc){
+	g.Url(method,pattern,handler)
 }
 
 // Get HTTP GET请求
-func (e *Engine)Get(pattern string,handler HandlerFunc){
-	e.Url(MethodGet,pattern,handler)
+func (g *RouterGroup)Get(pattern string,handler HandlerFunc){
+	g.Url(MethodGet,pattern,handler)
 }
 
 // Post HTTP POST请求
-func (e *Engine)Post(pattern string,handler HandlerFunc){
-	e.Url(MethodPost,pattern,handler)
+func (g *RouterGroup)Post(pattern string,handler HandlerFunc){
+	g.Url(MethodPost,pattern,handler)
 }
 
 // ServeHTTP 实现Handler接口
